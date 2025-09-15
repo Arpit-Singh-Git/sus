@@ -246,10 +246,10 @@ def tool_sniff_and_parse_bytes(content_type: str, content_bytes_b64: str) -> dic
 if ChatPromptTemplate is not None and ChatOpenAI is not None:
     SUMMARY_PROMPT = ChatPromptTemplate.from_messages([
         ("system", "You are an expert analyst. Given raw extracted web page content, produce a concise JSON with keys: 'title', 'key_points' (3-7 bullets), 'entities', 'language', 'tags'. Keep it short and objective."),
-        ("human", "URL: {url}
+        ("human", """URL: {url}
 TITLE: {title}
 TEXT (truncated):
-{snippet}")
+{snippet}""")
     ])
 else:
     SUMMARY_PROMPT = None
