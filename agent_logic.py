@@ -245,6 +245,43 @@ def tool_sniff_and_parse_bytes(content_type: str, content_bytes_b64: str) -> dic
     return {'text': text}
 
 
+def _call_tool(tool_obj, *args, **kwargs):
+    """
+    Robustly call a LangChain 'tool' object or the underlying function.
+    Tries common attributes used by different langchain versions and falls back
+    to calling the object if it's directly callable.
+    """
+    # Common attribute names for the wrapped/original function
+    for attr in ("__wrapped__", "func", "fn", "_func", "wrapped"):
+        candidate = getattr(tool_obj, attr, None)
+        if callable(candidate):
+            return candidate(*args, **kwargs)
+
+    # Some tool objects expose 'run' or 'call'; try them carefully
+    if hasattr(tool_obj, "run") and callable(tool_obj.run):
+        try:
+            return tool_obj.run(*args, **kwargs)
+        except TypeError:
+            # try single-arg style (some run implementations accept one argument)
+            if args:
+                return tool_obj.run(args[0])
+            return tool_obj.run()
+
+    if hasattr(tool_obj, "call") and callable(tool_obj.call):
+        try:
+            return tool_obj.call(*args, **kwargs)
+        except TypeError:
+            if args:
+                return tool_obj.call(args[0])
+            return tool_obj.call()
+
+    # Last resort: if the tool object itself is callable, call it
+    if callable(tool_obj):
+        return tool_obj(*args, **kwargs)
+
+    raise RuntimeError("Unable to call tool object; unsupported tool wrapper type")
+
+
 if ChatPromptTemplate is not None and ChatOpenAI is not None:
     SUMMARY_PROMPT = ChatPromptTemplate.from_messages([
         ("system", "You are an expert analyst. Given raw extracted web page content, produce a concise JSON with keys: 'title', 'key_points' (3-7 bullets), 'entities', 'language', 'tags'. Keep it short and objective."),
@@ -307,8 +344,8 @@ def crawl_web(
             continue
 
         try:
-            # Use direct call instead of .invoke if not using LangChain tool runner
-            fetched = tool_fetch_page.__wrapped__(current, render_js, timeout, user_agent)
+            # Use helper to call the underlying function for different LangChain versions
+            fetched = _call_tool(tool_fetch_page, current, render_js, timeout, user_agent)
         except Exception as e:
             errors.append(f"Fetch failed for {current}: {e}")
             continue
@@ -333,14 +370,14 @@ def crawl_web(
 
         try:
             if 'html' in ctype:
-                extracted = tool_extract_from_html.__wrapped__(final, content_text)
+                extracted = _call_tool(tool_extract_from_html, final, content_text)
                 title = extracted.get('title') or ''
                 metadata = extracted.get('metadata') or {}
                 links = extracted.get('links') or []
                 images = extracted.get('images') or []
                 text = extracted.get('text') or ''
             else:
-                parsed = tool_sniff_and_parse_bytes.__wrapped__(ctype, content_b64)
+                parsed = _call_tool(tool_sniff_and_parse_bytes, ctype, content_b64)
                 text = parsed.get('text') or ''
         except Exception as e:
             page_errors.append(str(e))
