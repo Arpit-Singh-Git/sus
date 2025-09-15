@@ -161,8 +161,8 @@ def parse_pdf(content: bytes) -> str:
         return ''
     try:
         with fitz.open(stream=content, filetype='pdf') as doc:
-            return '
-'.join(page.get_text() for page in doc)
+            return '\n'.join(page.get_text() for page in doc)
+
     except Exception:
         return ''
 
