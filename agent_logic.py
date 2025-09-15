@@ -308,7 +308,7 @@ def crawl_web(
 
         try:
             # Use direct call instead of .invoke if not using LangChain tool runner
-            fetched = tool_fetch_page(current, render_js, timeout, user_agent)
+            fetched = tool_fetch_page.__wrapped__(current, render_js, timeout, user_agent)
         except Exception as e:
             errors.append(f"Fetch failed for {current}: {e}")
             continue
@@ -333,14 +333,14 @@ def crawl_web(
 
         try:
             if 'html' in ctype:
-                extracted = tool_extract_from_html(final, content_text)
+                extracted = tool_extract_from_html.__wrapped__(final, content_text)
                 title = extracted.get('title') or ''
                 metadata = extracted.get('metadata') or {}
                 links = extracted.get('links') or []
                 images = extracted.get('images') or []
                 text = extracted.get('text') or ''
             else:
-                parsed = tool_sniff_and_parse_bytes(ctype, content_b64)
+                parsed = tool_sniff_and_parse_bytes.__wrapped__(ctype, content_b64)
                 text = parsed.get('text') or ''
         except Exception as e:
             page_errors.append(str(e))
