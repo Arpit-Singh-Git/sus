@@ -1,0 +1,27 @@
+
+# Core app
+streamlit>=1.31.0
+
+# Agentic orchestration (optional; app runs even if unavailable)
+langchain>=0.2.10
+langchain-community>=0.2.10
+openai>=1.40.0
+
+# Crawling & parsing
+httpx[http2]>=0.27.0
+beautifulsoup4>=4.12.3
+lxml>=5.2.2
+trafilatura>=1.6.3
+charset-normalizer>=3.3.2
+tldextract>=5.1.2
+
+# Optional: render JavaScript (enable via UI)
+playwright>=1.46.0
+
+# Documents
+pymupdf>=1.24.5
+python-docx>=1.1.2
+
+# Utilities
+tenacity>=8.3.0
+
