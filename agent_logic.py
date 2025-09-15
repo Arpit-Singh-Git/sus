@@ -1,4 +1,3 @@
-
 """
 Agentic Web Crawler logic with defensive imports so the module always imports cleanly.
 - Robust fetching via httpx + retries
@@ -158,25 +157,23 @@ def parse_html(base_url: str, html: bytes):
 
 def parse_pdf(content: bytes) -> str:
     if not fitz:
-        return ''
+        return ""
     try:
         with fitz.open(stream=content, filetype='pdf') as doc:
             return '\n'.join(page.get_text() for page in doc)
-
     except Exception:
-        return ''
+        return ""
 
 
 def parse_docx(content: bytes) -> str:
     if not docx:
-        return ''
+        return ""
     try:
         from io import BytesIO
         d = docx.Document(BytesIO(content))
-        return '
-'.join(p.text for p in d.paragraphs)
+        return '\n'.join(p.text for p in d.paragraphs)
     except Exception:
-        return ''
+        return ""
 
 
 def is_allowed_by_robots(url: str, user_agent: str = DEFAULT_UA) -> bool:
@@ -225,8 +222,7 @@ def tool_extract_from_html(base_url: str, html_text: str) -> dict:
     except Exception:
         main_text = ''
     if not main_text:
-        main_text = BeautifulSoup(html_text, 'lxml').get_text("
-", strip=True)
+        main_text = BeautifulSoup(html_text, 'lxml').get_text("\n", strip=True)
     return {'title': title, 'metadata': metadata, 'links': links, 'images': images, 'text': main_text}
 
 
@@ -309,7 +305,8 @@ def crawl_web(
             continue
 
         try:
-            fetched = tool_fetch_page.invoke({'url': current, 'render_js': render_js, 'timeout': timeout, 'user_agent': user_agent})
+            # Use direct call instead of .invoke if not using LangChain tool runner
+            fetched = tool_fetch_page(current, render_js, timeout, user_agent)
         except Exception as e:
             errors.append(f"Fetch failed for {current}: {e}")
             continue
@@ -334,14 +331,14 @@ def crawl_web(
 
         try:
             if 'html' in ctype:
-                extracted = tool_extract_from_html.invoke({'base_url': final, 'html_text': content_text})
+                extracted = tool_extract_from_html(final, content_text)
                 title = extracted.get('title') or ''
                 metadata = extracted.get('metadata') or {}
                 links = extracted.get('links') or []
                 images = extracted.get('images') or []
                 text = extracted.get('text') or ''
             else:
-                parsed = tool_sniff_and_parse_bytes.invoke({'content_type': ctype, 'content_bytes_b64': content_b64})
+                parsed = tool_sniff_and_parse_bytes(ctype, content_b64)
                 text = parsed.get('text') or ''
         except Exception as e:
             page_errors.append(str(e))
