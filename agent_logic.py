@@ -132,8 +132,7 @@ def parse_html(base_url: str, html: bytes):
             text = ''
         soup = BeautifulSoup(html, 'lxml')
         if not text:
-            text = soup.get_text("
-", strip=True)
+            text = soup.get_text("\n", strip=True)
         if soup.title and soup.title.string:
             title = soup.title.string.strip()
         for meta in soup.find_all('meta'):
