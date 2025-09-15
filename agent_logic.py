@@ -215,6 +215,7 @@ def tool_fetch_page(url: str, render_js: bool = False, timeout: int = 25, user_a
 
 @tool("extract_from_html", return_direct=False)
 def tool_extract_from_html(base_url: str, html_text: str) -> dict:
+    """Extracts title, metadata, links, images, and main text from HTML content."""
     title, metadata, links, images = parse_html(base_url, html_text.encode('utf-8', errors='ignore'))
     try:
         import trafilatura
@@ -228,6 +229,7 @@ def tool_extract_from_html(base_url: str, html_text: str) -> dict:
 
 @tool("sniff_and_parse_bytes", return_direct=False)
 def tool_sniff_and_parse_bytes(content_type: str, content_bytes_b64: str) -> dict:
+    """Sniffs content type and parses bytes to extract text from PDF, DOCX, or plain text."""
     import base64
     raw = base64.b64decode(content_bytes_b64.encode('ascii')) if content_bytes_b64 else b''
     ctype = (content_type or '').split(';')[0].strip().lower()
